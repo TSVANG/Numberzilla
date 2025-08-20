@@ -486,29 +486,40 @@
         }
 
         async function showHint() {
+            const move = findPossibleMove();
+            if (!move) {
+                messageBox.textContent = 'Подсказок нет!';
+                setTimeout(() => messageBox.textContent = '', 2000);
+                return;
+            }
+
             if (hints > 0) {
-                const move = findPossibleMove();
-                if (move) {
-                    hints--; updateUI();
-                    move.forEach(index => {
-                        const cell = gameBoard.querySelector(`[data-index='${index}']`);
-                        if (cell) cell.classList.add('hint-glow');
-                        setTimeout(() => cell?.classList.remove('hint-glow'), 1500);
-                    });
-                } else { messageBox.textContent = 'Подсказок нет!'; }
+                hints--; 
+                updateUI();
+                move.forEach(index => {
+                    const cell = gameBoard.querySelector(`[data-index='${index}']`);
+                    if (cell) cell.classList.add('hint-glow');
+                    setTimeout(() => cell?.classList.remove('hint-glow'), 1500);
+                });
             } else {
+                messageBox.textContent = 'Загрузка подсказки...';
                 try {
-                    const data = await vkBridge.send('VKWebAppShowRewardAd'); // Default ad_unit_id for testing
+                    const data = await vkBridge.send('VKWebAppShowRewardAd');
                     if (data.result) {
-                        hints++;
-                        updateUI();
                         messageBox.textContent = 'Вы получили подсказку!';
-                        setTimeout(()=> messageBox.textContent = '', 2000);
+                        move.forEach(index => {
+                           const cell = gameBoard.querySelector(`[data-index='${index}']`);
+                           if (cell) cell.classList.add('hint-glow');
+                           setTimeout(() => cell?.classList.remove('hint-glow'), 1500);
+                        });
+                    } else {
+                         messageBox.textContent = 'Нужно досмотреть рекламу до конца';
                     }
                 } catch (error) {
                     console.log("Rewarded Ad Error:", error);
-                    messageBox.textContent = 'Ошибка загрузки рекламы';
-                    setTimeout(()=> messageBox.textContent = '', 2000);
+                    messageBox.textContent = 'Реклама сейчас недоступна';
+                } finally {
+                    setTimeout(() => messageBox.textContent = '', 3000);
                 }
             }
         }
