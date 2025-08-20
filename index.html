@@ -517,7 +517,11 @@
                     }
                 } catch (error) {
                     console.log("Rewarded Ad Error:", error);
-                    messageBox.textContent = 'Реклама сейчас недоступна';
+                    if (error.error_data.error_reason === 'ma_not_ready_yet') {
+                        messageBox.textContent = 'Реклама еще не загрузилась. Попробуйте снова.';
+                    } else {
+                        messageBox.textContent = 'Реклама сейчас недоступна';
+                    }
                 } finally {
                     setTimeout(() => messageBox.textContent = '', 3000);
                 }
