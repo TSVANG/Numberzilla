@@ -140,9 +140,20 @@
                         <div class="anim-grid"><div class="anim-cell">5</div><div class="anim-cell"></div><div class="anim-cell"></div><div class="anim-cell"></div><div></div><div class="anim-cell">5<div class="anim-line" style="left: -19px; top: -19px; width: 41px; transform: rotate(45deg);"></div></div></div>
                     </div>
                 </div>
-                <button id="next-instruction-btn" class="mt-6 w-full py-2 px-4 bg-[#F9A826] text-white font-semibold rounded-lg shadow-md hover:bg-[#f9b84c] transition">Далее</button>
+                <button id="next-instruction-btn-1" class="mt-6 w-full py-2 px-4 bg-[#F9A826] text-white font-semibold rounded-lg shadow-md hover:bg-[#f9b84c] transition">Далее</button>
             </div>
             <div id="instruction-page-2" class="hidden">
+                <h2 class="text-2xl font-bold text-center mb-4">Пустые клетки</h2>
+                <div class="space-y-4 text-base text-center">
+                    <p>Пары можно соединять даже через пустые клетки.</p>
+                    <div class="anim-grid"><div class="anim-cell">3</div><div class="anim-cell" style="background: transparent;"></div><div class="anim-cell">7<div class="anim-line" style="left: -58px; top: 11px; width: 58px;"></div></div><div class="anim-cell"></div></div>
+                </div>
+                 <div class="mt-6 flex gap-4">
+                    <button id="back-instruction-btn-2" class="w-full py-2 px-4 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition">Назад</button>
+                    <button id="next-instruction-btn-2" class="w-full py-2 px-4 bg-[#F9A826] text-white font-semibold rounded-lg shadow-md hover:bg-[#f9b84c] transition">Далее</button>
+                </div>
+            </div>
+            <div id="instruction-page-3" class="hidden">
                  <h2 class="text-2xl font-bold text-center mb-4">Добавление линий</h2>
                 <div class="space-y-4 text-base text-center">
                     <p>Если ходы закончились, нажмите эту кнопку, чтобы скопировать все оставшиеся числа в конец поля.</p>
@@ -153,8 +164,8 @@
                     </div>
                 </div>
                 <div class="mt-6 flex gap-4">
-                    <button id="back-instruction-btn" class="w-full py-2 px-4 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition">Назад</button>
-                    <button id="close-instructions-btn" class="w-full py-2 px-4 bg-[#F9A826] text-white font-semibold rounded-lg shadow-md hover:bg-[#f9b84c] transition">Понятно</button>
+                    <button id="back-instruction-btn-3" class="w-full py-2 px-4 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition">Назад</button>
+                    <button class="js-close-instructions w-full py-2 px-4 bg-[#F9A826] text-white font-semibold rounded-lg shadow-md hover:bg-[#f9b84c] transition">Понятно</button>
                 </div>
             </div>
         </div>
@@ -215,9 +226,12 @@
         const instructionsModal = document.getElementById('instructions-modal');
         const instructionPage1 = document.getElementById('instruction-page-1');
         const instructionPage2 = document.getElementById('instruction-page-2');
-        const nextInstructionBtn = document.getElementById('next-instruction-btn');
-        const backInstructionBtn = document.getElementById('back-instruction-btn');
-        const closeInstructionsBtn = document.querySelectorAll('#instructions-modal button');
+        const instructionPage3 = document.getElementById('instruction-page-3');
+        const nextInstructionBtn1 = document.getElementById('next-instruction-btn-1');
+        const nextInstructionBtn2 = document.getElementById('next-instruction-btn-2');
+        const backInstructionBtn2 = document.getElementById('back-instruction-btn-2');
+        const backInstructionBtn3 = document.getElementById('back-instruction-btn-3');
+        const closeInstructionsBtns = document.querySelectorAll('.js-close-instructions');
         const gameOverModal = document.getElementById('game-over-modal');
         const finalScoreDisplay = document.getElementById('final-score');
         const playAgainBtn = document.getElementById('play-again-btn');
@@ -324,7 +338,6 @@
                 stats.wins++;
                 await saveStats();
                 stage++;
-                hints = INITIAL_HINTS;
                 addRowsCount = INITIAL_ADD_ROWS;
                 board = generateNumbers(35);
                 ghostBoard = Array(board.length).fill(null);
@@ -507,20 +520,17 @@
                     const data = await vkBridge.send('VKWebAppShowRewardAd');
                     if (data.result) {
                         messageBox.textContent = 'Вы получили подсказку!';
-                        move.forEach(index => {
-                           const cell = gameBoard.querySelector(`[data-index='${index}']`);
-                           if (cell) cell.classList.add('hint-glow');
-                           setTimeout(() => cell?.classList.remove('hint-glow'), 1500);
-                        });
+                        hints++;
+                        updateUI();
                     } else {
                          messageBox.textContent = 'Нужно досмотреть рекламу до конца';
                     }
                 } catch (error) {
                     console.log("Rewarded Ad Error:", error);
-                    if (error.error_data.error_reason === 'ma_not_ready_yet') {
-                        messageBox.textContent = 'Реклама еще не загрузилась. Попробуйте снова.';
+                    if (error.error_data && error.error_data.error_reason && error.error_data.error_reason.includes('not ready')) {
+                        messageBox.textContent = 'Реклама еще не готова. Попробуйте снова.';
                     } else {
-                        messageBox.textContent = 'Реклама сейчас недоступна';
+                        messageBox.textContent = 'Реклама сейчас недоступна.';
                     }
                 } finally {
                     setTimeout(() => messageBox.textContent = '', 3000);
@@ -550,6 +560,7 @@
         helpBtn.addEventListener('click', () => {
              instructionPage1.classList.remove('hidden');
              instructionPage2.classList.add('hidden');
+             instructionPage3.classList.add('hidden');
              instructionsModal.classList.add('visible');
         });
         statsBtn.addEventListener('click', () => {
@@ -557,15 +568,26 @@
             statsModal.classList.add('visible');
         });
         closeStatsBtn.addEventListener('click', () => statsModal.classList.remove('visible'));
-        nextInstructionBtn.addEventListener('click', () => {
+        
+        // Navigation for instructions
+        nextInstructionBtn1.addEventListener('click', () => {
             instructionPage1.classList.add('hidden');
             instructionPage2.classList.remove('hidden');
         });
-        backInstructionBtn.addEventListener('click', () => {
+        backInstructionBtn2.addEventListener('click', () => {
             instructionPage2.classList.add('hidden');
             instructionPage1.classList.remove('hidden');
         });
-        closeInstructionsBtn.forEach(btn => btn.addEventListener('click', () => instructionsModal.classList.remove('visible')));
+        nextInstructionBtn2.addEventListener('click', () => {
+            instructionPage2.classList.add('hidden');
+            instructionPage3.classList.remove('hidden');
+        });
+        backInstructionBtn3.addEventListener('click', () => {
+            instructionPage3.classList.add('hidden');
+            instructionPage2.classList.remove('hidden');
+        });
+        closeInstructionsBtns.forEach(btn => btn.addEventListener('click', () => instructionsModal.classList.remove('visible')));
+        
         playAgainBtn.addEventListener('click', async () => {
             try {
                 await vkBridge.send('VKWebAppShowInterstitialAd');
@@ -600,3 +622,4 @@
     </script>
 </body>
 </html>
+
