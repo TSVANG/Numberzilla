@@ -154,7 +154,7 @@
                 </div>
                 <div class="mt-6 flex gap-4">
                     <button id="back-instruction-btn" class="w-full py-2 px-4 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition">Назад</button>
-                    <button id="close-instructions-btn" class="w-full py-2 px-4 bg-[#F9A826] text-white font-semibold rounded-lg shadow-md hover:bg-[#f9b84c] transition">Понятно</button>
+                    <button class="js-close-instructions w-full py-2 px-4 bg-[#F9A826] text-white font-semibold rounded-lg shadow-md hover:bg-[#f9b84c] transition">Понятно</button>
                 </div>
             </div>
         </div>
@@ -217,7 +217,7 @@
         const instructionPage2 = document.getElementById('instruction-page-2');
         const nextInstructionBtn = document.getElementById('next-instruction-btn');
         const backInstructionBtn = document.getElementById('back-instruction-btn');
-        const closeInstructionsBtn = document.querySelectorAll('#instructions-modal button');
+        const closeInstructionsBtns = document.querySelectorAll('.js-close-instructions');
         const gameOverModal = document.getElementById('game-over-modal');
         const finalScoreDisplay = document.getElementById('final-score');
         const playAgainBtn = document.getElementById('play-again-btn');
@@ -517,10 +517,10 @@
                     }
                 } catch (error) {
                     console.log("Rewarded Ad Error:", error);
-                    if (error.error_data.error_reason === 'ma_not_ready_yet') {
-                        messageBox.textContent = 'Реклама еще не загрузилась. Попробуйте снова.';
+                    if (error.error_data && error.error_data.error_reason && error.error_data.error_reason.includes('not ready')) {
+                        messageBox.textContent = 'Реклама еще не готова. Попробуйте снова.';
                     } else {
-                        messageBox.textContent = 'Реклама сейчас недоступна';
+                        messageBox.textContent = 'Реклама сейчас недоступна.';
                     }
                 } finally {
                     setTimeout(() => messageBox.textContent = '', 3000);
