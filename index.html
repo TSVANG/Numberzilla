@@ -251,6 +251,7 @@
         const INITIAL_ADD_ROWS = 5;
         let stage = 1, score = 0, hints = INITIAL_HINTS, addRowsCount = INITIAL_ADD_ROWS;
         let stats = { wins: 0, bestScore: 0 };
+        let isLevelStarting = false;
 
         // --- VK Bridge ---
         vkBridge.send('VKWebAppInit');
@@ -330,6 +331,8 @@
             }
         }
         async function startNewLevel() {
+            if (isLevelStarting) return;
+            isLevelStarting = true;
             try {
                 await vkBridge.send('VKWebAppShowInterstitialAd');
             } catch (e) {
@@ -347,7 +350,10 @@
                 renderBoard();
                 checkForPossibleMoves();
                 saveCurrentGame();
-                setTimeout(() => messageBox.textContent = '', 2000);
+                setTimeout(() => {
+                    messageBox.textContent = '';
+                    isLevelStarting = false;
+                }, 2000);
             }
         }
 
@@ -431,20 +437,27 @@
             const start = Math.min(cell1.index, cell2.index), end = Math.max(cell1.index, cell2.index);
             const r1 = Math.floor(start / COLS), c1 = start % COLS;
             const r2 = Math.floor(end / COLS), c2 = end % COLS;
-            let path = [];
-            for (let i = start + 1; i < end; i++) if (board[i] !== null) path.push(board[i]);
-            if (path.length === 0) return { isValid: true, emptyCells: end - start - 1 };
+            
+            // Path 1: Vertical
             if (c1 === c2) {
-                path = [];
+                let path = [];
                 for (let i = start + COLS; i < end; i += COLS) if (board[i] !== null) path.push(board[i]);
                 if (path.length === 0) return { isValid: true, emptyCells: (end - start) / COLS - 1 };
             }
+            
+            // Path 2: Diagonal
             if (Math.abs(r1 - r2) === Math.abs(c1 - c2)) {
-                path = [];
+                let path = [];
                 const step = c2 > c1 ? COLS + 1 : COLS - 1;
                 for (let i = start + step; i < end; i += step) if (board[i] !== null) path.push(board[i]);
                 if (path.length === 0) return { isValid: true, emptyCells: Math.abs(r1 - r2) - 1 };
             }
+
+            // Path 3: Linear (covers horizontal and wrap-around)
+            let path = [];
+            for (let i = start + 1; i < end; i++) if (board[i] !== null) path.push(board[i]);
+            if (path.length === 0) return { isValid: true, emptyCells: end - start - 1 };
+
             return { isValid: false };
         }
         
@@ -540,9 +553,12 @@
 
         function checkWinCondition() {
             if (board.length > 0 && board.every(num => num === null)) {
-                board = []; ghostBoard = [];
+                board = []; 
+                ghostBoard = [];
             }
-            if (board.length === 0) setTimeout(startNewLevel, 500);
+            if (board.length === 0 && !isLevelStarting) {
+                startNewLevel();
+            }
         }
         
         async function showGameOver() {
@@ -589,12 +605,12 @@
         closeInstructionsBtns.forEach(btn => btn.addEventListener('click', () => instructionsModal.classList.remove('visible')));
         
         playAgainBtn.addEventListener('click', async () => {
+            gameOverModal.classList.remove('visible');
+            initGame(true);
             try {
                 await vkBridge.send('VKWebAppShowInterstitialAd');
             } catch (e) {
                 console.log(e);
-            } finally {
-                initGame(true);
             }
         });
         continueBtn.addEventListener('click', async () => {
